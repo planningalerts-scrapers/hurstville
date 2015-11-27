@@ -4,8 +4,6 @@ require 'scraperwiki.php';
 require 'simple_html_dom.php';
 date_default_timezone_set('Australia/Sydney');
 
-$terms_url   = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/Applicationmaster/Default.aspx";
-
 ## Accept Terms and return Cookies
 function accept_terms_get_cookies($terms_url) {
     $curl = curl_init($terms_url);
@@ -64,13 +62,13 @@ function buildformdata($dom, $eventtarget) {
 
 
 
-$cookies = accept_terms_get_cookies($terms_url);
-
 $url_base = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/applicationmaster/";
-$da_page = $url_base . "default.aspx?page=found&1=thisweek&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";
-#$da_page = $url_base . "default.aspx?page=found&1=thismonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'This Month' submitted DA, also to test pagination
+#$da_page = $url_base . "default.aspx?page=found&1=thisweek&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";
+$da_page = $url_base . "default.aspx?page=found&1=thismonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'This Month' submitted DA, also to test pagination
 #$da_page = $url_base . "default.aspx?page=found&1=lastmonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'Last Month' submitted DA, also to test pagination
 $comment_base = "mailto:hccmail@hurstville.nsw.gov.au?subject=Development Application Enquiry: ";
+
+$cookies = accept_terms_get_cookies($url_base . "Default.aspx");
 
 # Manually set cookie's key and get the value from array
 $request = array(
