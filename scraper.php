@@ -5,14 +5,11 @@ require 'simple_html_dom.php';
 date_default_timezone_set('Australia/Sydney');
 
 $terms_url   = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/Applicationmaster/Default.aspx";
-$cookie_file = "cookies.txt";
 
 ## Accept Terms and return Cookies
-function accept_terms_get_cookies($terms_url, $cookie_file) {
+function accept_terms_get_cookies($terms_url) {
     $curl = curl_init($terms_url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_COOKIEJAR, $cookie_file);
-    curl_setopt($curl, CURLOPT_COOKIEFILE, $cookie_file);
     $terms_response = curl_exec($curl);
     curl_close($curl);
 
@@ -35,9 +32,10 @@ function accept_terms_get_cookies($terms_url, $cookie_file) {
     $terms_response = curl_exec($curl);
     curl_close($curl);
     // get cookie
-    // Please imporve it, I am not regex expert, this code changed
-    // ASP.NET_SessionId to ASP_NET_SessionId and Path, HttpOnly are missing etc
-    // Example - Cookie: ASP.NET_SessionId=bz3jprrptbflxgzwes3mtse4; path=/; HttpOnly
+    // Please imporve it, I am not regex expert, this code changed ASP.NET_SessionId cookie
+    // to ASP_NET_SessionId and Path, HttpOnly are missing etc
+    // Example Source - Cookie: ASP.NET_SessionId=bz3jprrptbflxgzwes3mtse4; path=/; HttpOnly
+    // Stored in array - ASP_NET_SessionId => bz3jprrptbflxgzwes3mtse4
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $terms_response, $matches);
     $cookies = array();
     foreach($matches[1] as $item) {
@@ -66,9 +64,7 @@ function buildformdata($dom, $eventtarget) {
 
 
 
-
-
-$cookies = accept_terms_get_cookies($terms_url, $cookie_file);
+$cookies = accept_terms_get_cookies($terms_url);
 
 $url_base = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/applicationmaster/";
 $da_page = $url_base . "default.aspx?page=found&1=thisweek&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";
@@ -79,7 +75,7 @@ $comment_base = "mailto:hccmail@hurstville.nsw.gov.au?subject=Development Applic
 # Manually set cookie's key and get the value from array
 $request = array(
     'http'    => array(
-    'header'  => 'Cookie: ASP.NET_SessionId=' .$cookies['ASP_NET_SessionId']. '; path=/; HttpOnly\r\n'
+    'header'  => "Cookie: ASP.NET_SessionId=" .$cookies['ASP_NET_SessionId']. "; path=/; HttpOnly\r\n"
     ));
 $context = stream_context_create($request);
 $dom = file_get_html($da_page, false, $context);
@@ -95,9 +91,9 @@ for ($i = 1; $i <= $NumPages; $i++) {
         $eventtarget = substr($dom->find('div[class=rgWrap rgNumPart] a',$i-1)->href, 25, 61);
         $request = array(
             'http'    => array(
-            'method'  => 'POST',
-            'header'  => 'Cookie: ASP.NET_SessionId=' .$cookies['ASP_NET_SessionId']. '; path=/; HttpOnly\r\n' .
-                         'Content-Type: application/x-www-form-urlencoded\r\n',
+            'method'  => "POST",
+            'header'  => "Cookie: ASP.NET_SessionId=" .$cookies['ASP_NET_SessionId']. "; path=/; HttpOnly\r\n" .
+                         "Content-Type: application/x-www-form-urlencoded\r\n",
             'content' => http_build_query(buildformdata($dom, $eventtarget))));
         $context = stream_context_create($request);
         $html = file_get_html($da_page, false, $context);
@@ -138,7 +134,5 @@ for ($i = 1; $i <= $NumPages; $i++) {
         }
     }
 }
-
-
 
 ?>
