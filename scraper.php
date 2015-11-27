@@ -26,7 +26,6 @@ function accept_terms_get_cookies($terms_url, $cookie_file) {
     $postfields['__VIEWSTATE'] = $viewstate;
     $postfields['__EVENTVALIDATION'] = $eventvalidation;
     $postfields['ctl00$cphContent$ctl00$Button1'] = 'Agree';
-    #$postfields['ctl00$ctMain1$chkAgree$ctl02'] = 'on';
 
     $curl = curl_init($terms_url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -36,8 +35,9 @@ function accept_terms_get_cookies($terms_url, $cookie_file) {
     $terms_response = curl_exec($curl);
     curl_close($curl);
     // get cookie
-    // Please imporve it, it changes ASP.NET to ASP_NET and Path is missing etc
-    // Set-Cookie: ASP.NET_SessionId=bz3jprrptbflxgzwes3mtse4; path=/; HttpOnly
+    // Please imporve it, I am not regex expert, this code changed
+    // ASP.NET_SessionId to ASP_NET_SessionId and Path, HttpOnly are missing etc
+    // Example - Cookie: ASP.NET_SessionId=bz3jprrptbflxgzwes3mtse4; path=/; HttpOnly
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $terms_response, $matches);
     $cookies = array();
     foreach($matches[1] as $item) {
@@ -46,22 +46,6 @@ function accept_terms_get_cookies($terms_url, $cookie_file) {
     }
     return $cookies;
 }
-
-$cookies = accept_terms_get_cookies($terms_url, $cookie_file);
-
-$url_base = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/applicationmaster/";
-$da_page = $url_base . "default.aspx?page=found&1=thisweek&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";
-$da_page = $url_base . "default.aspx?page=found&1=thismonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'This Month' submitted DA, also to test pagination
-#$da_page = $url_base . "default.aspx?page=found&1=lastmonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'Last Month' submitted DA, also to test pagination
-$comment_base = "mailto:hccmail@hurstville.nsw.gov.au?subject=Development Application Enquiry: ";
-
-
-$request = array(
-    'http'    => array(
-    'header'  => 'Cookie: ASP.NET_SessionId=' .$cookies['ASP_NET_SessionId']. '; path=/; HttpOnly\r\n'
-    ));
-$context = stream_context_create($request);
-$dom = file_get_html($da_page, false, $context);
 
 ### Collect all 'hidden' inputs, plus add the current $eventtarget
 ### $eventtarget is coming from the 'pages' section of the HTML
@@ -79,6 +63,26 @@ function buildformdata($dom, $eventtarget) {
     
     return $a;
 }
+
+
+
+
+
+$cookies = accept_terms_get_cookies($terms_url, $cookie_file);
+
+$url_base = "http://daenquiry.hurstville.nsw.gov.au/masterviewui/Modules/applicationmaster/";
+$da_page = $url_base . "default.aspx?page=found&1=thisweek&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";
+#$da_page = $url_base . "default.aspx?page=found&1=thismonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'This Month' submitted DA, also to test pagination
+#$da_page = $url_base . "default.aspx?page=found&1=lastmonth&4a=DA%27,%27S96Mods%27,%27Mods%27,%27Reviews&6=F";        # Use this URL to get 'Last Month' submitted DA, also to test pagination
+$comment_base = "mailto:hccmail@hurstville.nsw.gov.au?subject=Development Application Enquiry: ";
+
+# Manually set cookie's key and get the value from array
+$request = array(
+    'http'    => array(
+    'header'  => 'Cookie: ASP.NET_SessionId=' .$cookies['ASP_NET_SessionId']. '; path=/; HttpOnly\r\n'
+    ));
+$context = stream_context_create($request);
+$dom = file_get_html($da_page, false, $context);
 
 # By default, assume it is single page
 $dataset  = $dom->find("tr[class=rgRow], tr[class=rgAltRow]");
